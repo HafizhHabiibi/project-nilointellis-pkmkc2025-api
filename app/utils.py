@@ -1,41 +1,30 @@
 import requests
-import os
-import json
 from flask import current_app
+from pymongo import MongoClient
+from datetime import datetime
 
-CHAT_ID_FILE = "chat_id.json"
+def get_db():
+    client = MongoClient(current_app.config["MONGO_URI"])
+    return client["nilo"]
 
 def save_chat_id(chat_id):
-    """Simpan chat_id pengguna ke file JSON jika belum ada."""
-    if os.path.exists(CHAT_ID_FILE):
-        try:
-            with open(CHAT_ID_FILE, 'r') as f:
-                chat_ids = json.load(f)
-        except json.JSONDecodeError:
-            chat_ids = []
-    else:
-        chat_ids = []
+    db = get_db()
+    collection = db["chat_id_collection"]
+    if not collection.find_one({"chat_id":chat_id}):
+        collection.insert_one({
+            "chat_id": chat_id,
+            "joined_at": datetime.utcnow()
+        })
 
-    if chat_id not in chat_ids:
-        chat_ids.append(chat_id)
-        with open(CHAT_ID_FILE, "w") as f:
-            json.dump(chat_ids, f)
-
-def get_all_chat_ids():
-    """Ambil semua chat_id yang tersimpan."""
-    if os.path.exists(CHAT_ID_FILE):
-        try:
-            with open(CHAT_ID_FILE, 'r') as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            return []
-    return []
+def get_chat_id():
+    db = get_db()
+    collection = db["chat_id_collection"]
+    return [doc["chat_id"] for doc in collection.find()]
 
 def send_notif(message):
-    """Kirim notifikasi ke semua pengguna yang sudah menyimpan chat_id."""
     token = current_app.config['TELEGRAM_BOT_TOKEN']
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    chat_ids = get_all_chat_ids()
+    chat_ids = get_chat_id()
 
     for chat_id in chat_ids:
         payload = {
@@ -43,7 +32,6 @@ def send_notif(message):
             'text': message,
             'parse_mode': "Markdown"
         }
-
         try:
             requests.post(url, data=payload)
         except Exception as e:
