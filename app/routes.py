@@ -90,7 +90,7 @@ def simpan_data():
             warn.append(f"pH kolam terlalu tinggi : {ph}")
 
     # tds
-    if ph is not None:
+    if tds is not None:
         if tds < tds_min:
             warn.append(f"TDS kolam terlalu rendah : {tds} PPM")
         elif tds > tds_max:
