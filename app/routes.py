@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from bson.json_util import dumps
-from .utils import send_notif, sokap
+from .utils import send_notif, sokap, stop_chat
 import pytz
 
 # Load environment variables
@@ -46,6 +46,8 @@ def webhook():
         text = data["message"].get("text", "")
         if text == "/start":
             sokap(chat_id)
+        elif text == "/stop":
+            stop_chat(chat_id)
     return jsonify({"ok": True})
 
 # POST data sensor
