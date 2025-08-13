@@ -16,6 +16,15 @@ def save_chat_id(chat_id):
             "joined_at": datetime.utcnow()
         })
 
+def delete_chat_id(chat_id):
+    db = get_db()
+    collection = db["chat_id_collection"]
+    result = collection.delete_one({"chat_id": chat_id})
+    if result.deleted_count > 0:
+        print(f"Chat ID {chat_id} Berhasil Dihapus")
+    else:
+        print(f"Chat ID {chat_id} Tidak Ditemukan")
+
 def get_chat_id():
     db = get_db()
     collection = db["chat_id_collection"]
@@ -57,3 +66,23 @@ def sokap(chat_id):
         requests.post(url, data=payload)
     except Exception as e:
         print(f"Gagal kirim sambutan ke {chat_id}:", e)
+
+def stop_chat(chat_id):
+    delete_chat_id(chat_id)
+    pesan = (
+        "*❌ Notifikasi dari NiloIntellis Bot berhenti!* \n\n"
+        "Ketik */start* untuk menerima notifikasi kembali!"
+    )
+    token = current_app.config['TELEGRAM_BOT_TOKEN']
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+
+    payload = {
+        'chat_id': chat_id,
+        'text' : pesan,
+        'parse_mode': "Markdown"
+    }
+
+    try:
+        requests.post(url, data=payload)
+    except Exception as e:
+        print(f"Gagal kirim pesan stop ke {chat_id}:", e)
