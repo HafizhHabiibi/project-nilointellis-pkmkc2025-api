@@ -19,6 +19,7 @@ MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 db = client["nilo"]
 collection = db["sensor"]
+collection2 = db["status_ikan"]
 
 # Global variable untuk data terakhir
 data_terakhir = {}
@@ -66,7 +67,6 @@ def simpan_data():
     print("✅ Data berhasil disimpan:", data_terakhir)
 
     warn = []
-
     ph_min, ph_max = 6.5, 8.5
     temp_min, temp_max = 25.0, 32.0
     tds_min, tds_max = 300, 800
@@ -105,12 +105,41 @@ def simpan_data():
         elif turbidity > turbidity_max:
             warn.append(f"Turbidity kolam terlalu tinggi : {turbidity} NTU")
 
+    # Jika ada peringatan kondisi kolam
     if warn:
         pesan = ("*🐟 NiloIntellis: Ada yang Perlu Diperhatikan!*\n\n" + "\n".join(warn) 
                 + "\n\n*Segera periksa kondisi kolam!*")
         send_notif(pesan)
 
     return jsonify({"message": "Data berhasil disimpan"}), 201
+
+# ✅ Tambahan baru: POST status ikan dari sistem deteksi YOLO/DeepSORT
+@api.route('/status_ikan', methods=['POST'])
+def simpan_status_ikan():
+    """Menerima status dari sistem deteksi ikan mati dan kirim notifikasi jika perlu"""
+    data = request.get_json()
+
+    if not data or 'status' not in data:
+        return jsonify({"error": "Data tidak valid atau tidak ada field 'status'"}), 400
+
+    status = data['status']
+    now = datetime.now(timezone.utc)
+    data['timestamp'] = now
+
+    # Simpan status ke MongoDB
+    collection2.insert_one(data)
+    print(f"✅ Status ikan disimpan: {status} ({now})")
+
+    # Jika ada ikan mati → kirim notifikasi Telegram
+    if status.lower() == "ada ikan mati":
+        pesan = (
+            "*🚨 Deteksi Ikan Mati!* 🐟\n\n"
+            "Ada ikan mati woii!! coba dicek, "
+            "kalo scam maaf yaa, masih prototipe hehe.."
+        )
+        send_notif(pesan)
+
+    return jsonify({"message": "Status berhasil disimpan"}), 201
 
 # GET data sensor terakhir
 @api.route('/sensor', methods=['GET'])
