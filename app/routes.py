@@ -133,9 +133,8 @@ def simpan_status_ikan():
     # Jika ada ikan mati → kirim notifikasi Telegram
     if status.lower() == "ada ikan mati":
         pesan = (
-            "*🚨 Deteksi Ikan Mati!* 🐟\n\n"
-            "Ada ikan mati woii!! coba dicek, "
-            "kalo scam maaf yaa, masih prototipe hehe.."
+            "*🚨 NiloIntellis: Deteksi Ikan Mati!* 🐟\n\n"
+            "ALERT!! TERDETEKSI IKAN MATI OLEH SISTEM. "
         )
         send_notif(pesan)
 
